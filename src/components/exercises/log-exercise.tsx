@@ -25,11 +25,7 @@ const WorkoutApp: React.FC = () => {
   const workoutForm = useForm<IWorkout>({
     defaultValues: {
       name: "",
-      date: new Date().toLocaleDateString("en-US", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      }),
+      date: new Date().toISOString(),
       startTime: "",
       endTime: "",
       bodyWeight: 0,

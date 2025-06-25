@@ -1,10 +1,9 @@
-import { HeroParallax } from "@/components/ui/hero-parallax";
-import { mainFeatures } from "@/data/fitness-feature";
+import FitnessHero from "@/components/ui/hero-section";
 
 export default function HomePage() {
   return (
     <main className="bg-black">
-      <HeroParallax products={mainFeatures} />
+      <FitnessHero />
     </main>
   );
 }

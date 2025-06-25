@@ -13,6 +13,11 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth.context";
+export interface User {
+  id: string;
+  email: string;
+  userName: string;
+}
 
 export function Header() {
   const router = useRouter();
@@ -67,17 +72,32 @@ export function Header() {
     setIsProfileDropdownOpen(false);
   };
 
-  // Get user initials
   const getUserInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
-      .split(" ")
-      .map((name) => name.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+    if (user?.userName && user.userName.trim() !== "") {
+      const username = user.userName;
 
+      // If username has spaces, take first letter of each word
+      if (username.includes(" ")) {
+        return username
+          .split(" ")
+          .map((word) => word.charAt(0))
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
+      }
+
+      // If username is a single word, take first 2 characters
+      return username.slice(0, 2).toUpperCase();
+    }
+
+    // Fallback to email initials
+    if (user?.email && user.email !== "") {
+      const emailName = user.email.split("@")[0];
+      return emailName.slice(0, 2).toUpperCase();
+    }
+
+    return "U";
+  };
   // Show loading state
   if (loading) {
     return (
@@ -128,7 +148,7 @@ export function Header() {
                       {getUserInitials()}
                     </div>
                     <span className="text-gray-200 font-medium hidden sm:block">
-                      {user?.name}
+                      {user?.userName}
                     </span>
                     <svg
                       className={`w-5 h-5 text-gray-300 transition-all duration-300 ${
@@ -164,7 +184,7 @@ export function Header() {
                               Signed in as
                             </p>
                             <p className="text-sm font-medium text-white truncate">
-                              {user?.email || user?.name}
+                              {user?.email || user?.userName}
                             </p>
                           </div>
 
@@ -265,7 +285,7 @@ export function Header() {
                       {getUserInitials()}
                     </div>
                     <div>
-                      <p className="text-white font-medium">{user?.name}</p>
+                      <p className="text-white font-medium">{user?.userName}</p>
                       <p className="text-gray-400 text-sm">{user?.email}</p>
                     </div>
                   </div>

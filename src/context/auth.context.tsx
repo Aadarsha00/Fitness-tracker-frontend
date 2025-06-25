@@ -9,11 +9,10 @@ import {
   useMemo,
 } from "react";
 import Cookies from "js-cookie";
-// No need to import getCurrentUser since we're not using it
 
 interface User {
   id: string;
-  name: string;
+  userName: string;
   email: string;
 }
 

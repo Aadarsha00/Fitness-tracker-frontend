@@ -15,7 +15,7 @@ const Workout = () => {
     queryKey: ["workouts"],
     queryFn: getUserWorkouts,
   });
-
+  console.log("workouts", data);
   const deleteMutation = useMutation({
     mutationFn: deleteWorkout,
     onSuccess: () => {
