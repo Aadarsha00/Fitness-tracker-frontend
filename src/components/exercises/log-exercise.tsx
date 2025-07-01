@@ -22,10 +22,19 @@ const WorkoutApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>("workout");
   const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart | "">("");
 
+  // Helper function to get current date in YYYY-MM-DD format
+  const getCurrentDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const workoutForm = useForm<IWorkout>({
     defaultValues: {
       name: "",
-      date: new Date().toISOString(),
+      date: getCurrentDate(),
       startTime: "",
       endTime: "",
       bodyWeight: 0,

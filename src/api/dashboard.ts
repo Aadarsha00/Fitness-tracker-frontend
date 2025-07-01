@@ -15,12 +15,28 @@ export const getWorkoutAnalytics = async (period = 30) => {
 
 export const getBodyWeightProgress = async (period = 90) => {
   try {
+    console.log(`🔍 Fetching body weight progress for period: ${period} days`);
     const res = await api.get(
       `/dashboard/body-weight-progress?period=${period}`
     );
-    return res.data?.data || [];
-  } catch (error) {
-    console.error("Error fetching body weight progress:", error);
+
+    console.log("🔍 Body weight API response:", res.data);
+
+    // The backend returns data directly in res.data.data
+    const bodyWeightData = res.data?.data || [];
+
+    console.log(`🔍 Extracted body weight data:`, bodyWeightData);
+    console.log(`🔍 Number of records: ${bodyWeightData.length}`);
+
+    // Log debug info if available
+    if (res.data?.debug) {
+      console.log("🔍 Debug info from backend:", res.data.debug);
+    }
+
+    return bodyWeightData;
+  } catch (error: any) {
+    console.error("❌ Error fetching body weight progress:", error);
+    console.error("❌ Error response:", error.response?.data);
     return [];
   }
 };

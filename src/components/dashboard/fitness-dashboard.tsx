@@ -6,8 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   PieChart,
   Pie,
   Cell,
@@ -21,10 +19,10 @@ import {
   Calendar,
   TrendingUp,
   Dumbbell,
-  Target,
   Award,
   Activity,
   AlertCircle,
+  Scale,
 } from "lucide-react";
 import {
   getDashboardOverview,
@@ -127,10 +125,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           label
         ).toLocaleDateString()}`}</p>
         {payload.map((entry: any, index: number) => (
-          <p
-            key={index}
-            className="text-white"
-          >{`${entry.name}: ${entry.value}`}</p>
+          <p key={index} className="text-white">{`${entry.name}: ${
+            entry.value
+          }${entry.name === "weight" ? " lbs" : ""}`}</p>
         ))}
       </div>
     );
@@ -176,7 +173,7 @@ export default function Dashboard() {
     retry: 3,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    gcTime: 10 * 60 * 1000,
   });
 
   // Dashboard overview data (summary + others)
@@ -190,13 +187,23 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Body weight progress
-  const { data: bodyWeightData = [], isLoading: isBodyWeightLoading } =
-    useQuery<BodyWeightData[]>({
-      queryKey: ["body-weight-progress", 90],
-      queryFn: () => getBodyWeightProgress(90),
-      staleTime: 5 * 60 * 1000,
-    });
+  // Body weight progress - FIXED: Use selectedPeriod consistently
+  const {
+    data: bodyWeightData = [],
+    isLoading: isBodyWeightLoading,
+    error: bodyWeightError,
+    isError: isBodyWeightError,
+  } = useQuery<BodyWeightData[]>({
+    queryKey: ["body-weight-progress", selectedPeriod],
+    queryFn: async () => {
+      console.log(`🔍 Fetching body weight for period: ${selectedPeriod}`);
+      const result = await getBodyWeightProgress(selectedPeriod);
+      console.log(`🔍 Body weight query result:`, result);
+      return result;
+    },
+    staleTime: 2 * 60 * 1000, // Reduced stale time for debugging
+    retry: 2,
+  });
 
   // Exercise performance for selected exercise
   const {
@@ -227,6 +234,17 @@ export default function Dashboard() {
       }
     }
   }, [exercises, selectedExerciseId, exercisesLoading]);
+
+  // Debug effect for body weight data
+  useEffect(() => {
+    console.log("🔍 Body weight data changed:", {
+      isLoading: isBodyWeightLoading,
+      isError: isBodyWeightError,
+      dataLength: bodyWeightData?.length,
+      data: bodyWeightData,
+      error: bodyWeightError,
+    });
+  }, [bodyWeightData, isBodyWeightLoading, isBodyWeightError, bodyWeightError]);
 
   // Show loading state
   if (isDashboardLoading) {
@@ -410,51 +428,77 @@ export default function Dashboard() {
             <h3 className="text-lg font-semibold text-white mb-4">
               Body Part Focus
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={bodyPartDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ bodyPart, percent }) =>
-                    `${bodyPart} ${((percent || 0) * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {bodyPartDistribution.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1f2937",
-                    border: "1px solid #374151",
-                    borderRadius: "8px",
-                    color: "#ffffff",
-                  }}
-                  formatter={(value) => [value, "Exercises"]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {bodyPartDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={bodyPartDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ bodyPart, percent }) =>
+                      `${bodyPart} ${((percent || 0) * 100).toFixed(0)}%`
+                    }
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {bodyPartDistribution.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      border: "1px solid #374151",
+                      borderRadius: "8px",
+                      color: "#ffffff",
+                    }}
+                    formatter={(value) => [value, "Exercises"]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-400 text-center py-8">
+                No body part data available for the selected period.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Body Weight Progress & Personal Records */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Body Weight Progress */}
+          {/* Body Weight Progress - ENHANCED ERROR HANDLING */}
           <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Body Weight Progress
-            </h3>
+            <div className="flex items-center mb-4">
+              <Scale className="h-5 w-5 text-purple-400 mr-2" />
+              <h3 className="text-lg font-semibold text-white">
+                Body Weight Progress
+              </h3>
+            </div>
+
+            {/* Debug Information */}
+            {process.env.NODE_ENV === "development" && (
+              <div className="mb-4 p-2 bg-gray-700 rounded text-xs text-gray-300">
+                Debug: Loading={isBodyWeightLoading.toString()}, Error=
+                {isBodyWeightError.toString()}, Data Length=
+                {bodyWeightData?.length || 0}
+              </div>
+            )}
+
             {isBodyWeightLoading ? (
               <LoadingSpinner />
-            ) : bodyWeightData.length > 0 ? (
+            ) : isBodyWeightError ? (
+              <div className="text-center py-8">
+                <ErrorMessage message="Failed to load body weight data" />
+                <p className="text-sm text-gray-500 mt-2">
+                  Error: {bodyWeightError?.message || "Unknown error"}
+                </p>
+              </div>
+            ) : bodyWeightData && bodyWeightData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={bodyWeightData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -483,9 +527,22 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-400 text-center py-8">
-                No body weight data available for the selected period.
-              </p>
+              <div className="text-center py-8">
+                <Scale className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 mb-2">
+                  No body weight data available for the selected{" "}
+                  {selectedPeriod}-day period.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Make sure to record your body weight when creating workouts.
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  Refresh Data
+                </button>
+              </div>
             )}
           </div>
 
@@ -515,7 +572,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <p className="text-gray-400 text-center py-8">
-                No personal records found.
+                No personal records available.
               </p>
             )}
           </div>

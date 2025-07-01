@@ -92,7 +92,7 @@ export default function FitnessHero() {
             />
 
             <ServiceCard
-              href="/workout"
+              href="/workouts"
               title="Workout History"
               description="Review your complete workout history with detailed logs and progress tracking."
               imageSrc="/api/placeholder/400/300"
